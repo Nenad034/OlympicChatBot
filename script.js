@@ -62,21 +62,21 @@ const resizeHandle = document.getElementById('resize-handle');
  */
 function sanitizeInput(input) {
     if (!input || typeof input !== 'string') return '';
-    
+
     // Remove script tags and dangerous patterns
     let sanitized = input;
     SECURITY_CONFIG.BLOCKED_PATTERNS.forEach(pattern => {
         sanitized = sanitized.replace(pattern, '');
     });
-    
+
     // HTML escape
     const div = document.createElement('div');
     div.textContent = sanitized;
     sanitized = div.innerHTML;
-    
+
     // Limit length
     sanitized = sanitized.substring(0, SECURITY_CONFIG.MAX_MESSAGE_LENGTH);
-    
+
     return sanitized.trim();
 }
 
@@ -87,8 +87,8 @@ function sanitizeInput(input) {
  */
 function detectPromptInjection(input) {
     if (!input) return false;
-    
-    return SECURITY_CONFIG.PROMPT_INJECTION_PATTERNS.some(pattern => 
+
+    return SECURITY_CONFIG.PROMPT_INJECTION_PATTERNS.some(pattern =>
         pattern.test(input)
     );
 }
@@ -99,12 +99,12 @@ function detectPromptInjection(input) {
  */
 function isRateLimited() {
     const now = Date.now();
-    
+
     // Remove timestamps older than the rate limit window
     messageTimestamps = messageTimestamps.filter(
         timestamp => now - timestamp < SECURITY_CONFIG.RATE_LIMIT_WINDOW_MS
     );
-    
+
     return messageTimestamps.length >= SECURITY_CONFIG.MAX_MESSAGES_PER_MINUTE;
 }
 
@@ -154,7 +154,7 @@ function showRateLimitWarning() {
     warningDiv.className = 'rate-limit-warning';
     warningDiv.innerHTML = '⚠️ Previše poruka u kratkom vremenu. Molimo sačekajte malo.';
     chatbotMessages.appendChild(warningDiv);
-    
+
     setTimeout(() => {
         warningDiv.remove();
     }, 3000);
@@ -168,170 +168,131 @@ function showErrorMessage(message) {
     errorDiv.className = 'error-message';
     errorDiv.innerHTML = `⚠️ ${message}`;
     chatbotMessages.appendChild(errorDiv);
-    
+
     setTimeout(() => {
         errorDiv.remove();
     }, 5000);
 }
 
 // ===================================
-// Olympic Travel Knowledge Base
+// Backend API Configuration
 // ===================================
 
-const OLYMPIC_KNOWLEDGE = {
-    destinations: {
-        summer: {
-            greece: "Grčka - Najpopularnija destinacija za letovanje! Nudimo aranžmane za Tasos, Halkidiki, Krit, Rodos, Krf i druge prelepе destinacije. Kristalno čisto more, prelepe plaže i bogata istorija.",
-            turkey: "Turska - Odlična kombinacija plaže i sadržaja! Antalija, Belek, Side, Alanja - sve sa all-inclusive ponudama i vrhunskim hotelima.",
-            egypt: "Egipat - Crveno more i piramide! Hurghada i Sharm El Sheikh nude fantastičan podvodni svet i luksuzne resortе.",
-            tunisia: "Tunis - Egzotična destinacija sa prelepim peskušama i orijentalnim šarmom.",
-            croatia: "Hrvatska - Naša najlепša suseda! Dalmacija, Istra, Kvarner - kristalno čisto more i bogata kulturna baština.",
-            montenegro: "Crna Gora - Perla Jadrana! Budva, Bečići, Sveti Stefan - prelepe plaže i mediteranski ambijent.",
-            albania: "Albanija - Skriveni dragulj Jadrana! Povoljne cene i netaknuta priroda.",
-            bulgaria: "Bugarska - Sunčev breg i Zlatni pijasci - odličan izbor za porodice sa decom."
-        },
-        winter: {
-            serbia: "Srbija - Kopaonik, Zlatibor, Stara Planina - naše najlepše planine sa odličnim ski stazama!",
-            bulgaria: "Bugarska - Bansko i Borovets - povoljno zimovanje sa kvalitetnim stazama.",
-            austria: "Austrija - Alpi na vrhunskom nivou! Innsbruck, Sölden, Ischgl - za prave ljubitelje skijanja.",
-            italy: "Italija - Dolomiti i Alpi sa italijanskim šarmom. Cortina d'Ampezzo i Val Gardena.",
-            france: "Francuska - Alpi - Chamonix, Val d'Isère - najpoznatija ski odmarališta na svetu!",
-            slovenia: "Slovenija - Kranjska Gora i Vogel - blizu i pristupačno.",
-            bosnia: "Bosna i Hercegovina - Jahorina i Bjelašnica - odličan kvalitet po povoljnim cenama."
-        }
-    },
-    contact: {
-        belgrade: {
-            address: "Makedonska 30, Beograd",
-            phones: ["+381 11 655 0 020", "+381 11 655 0 040", "+381 11 655 7 289", "+381 11 655 7 297"],
-            email: "info@olympic.rs"
-        },
-        kragujevac: {
-            address: "Karađorđeva 20, Kragujevac",
-            phones: ["+381 34 617 6 020"],
-            email: "info@olympic.rs"
-        }
-    },
-    services: [
-        "Letovanje 2026 - Grčka, Turska, Egipat, Tunis, Hrvatska, Crna Gora, Albanija, Bugarska",
-        "Zimovanje 2026 - Srbija, Bugarska, Austrija, Italija, Francuska, Slovenija, BiH",
-        "Avio karte - Povoljne cene za sve destinacije",
-        "Wellness & Spa - Opuštajući odmor u spa centrima",
-        "Nova Godina 2026 - Specijalne ponude za doček Nove godine",
-        "Organizovana putovanja - Grupna putovanja sa vodičem"
-    ]
-};
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // ===================================
-// AI Response Generator
+// AI Response Generator (Backend API)
 // ===================================
 
 /**
- * Generate AI response based on user input
+ * Generate AI response by calling backend API
  * @param {string} userMessage - Sanitized user message
- * @returns {string} - AI response
+ * @returns {Promise<string>} - AI response
  */
-function generateAIResponse(userMessage) {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    // Greeting responses
-    if (lowerMessage.match(/\b(zdravo|cao|dobar dan|dobro vece|bok|hej|hello|hi)\b/)) {
-        return "Zdravo! 👋 Dobrodošli u Olympic Travel. Kako vam mogu pomoći danas? Možete me pitati o letovanju, zimovanju, avio kartama ili našim kontakt informacijama.";
-    }
-    
-    // Summer destinations
-    if (lowerMessage.includes('letovanje') || lowerMessage.includes('leto') || lowerMessage.includes('more') || lowerMessage.includes('plaža')) {
-        let response = "🏖️ <strong>Letovanje 2026</strong><br><br>Nudimo fantastične destinacije:<br><br>";
-        
-        if (lowerMessage.includes('grčka') || lowerMessage.includes('grcka') || lowerMessage.includes('greece')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.summer.greece}<br><br>`;
-        } else if (lowerMessage.includes('turska') || lowerMessage.includes('turkey')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.summer.turkey}<br><br>`;
-        } else if (lowerMessage.includes('egipat') || lowerMessage.includes('egypt')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.summer.egypt}<br><br>`;
-        } else if (lowerMessage.includes('hrvatska') || lowerMessage.includes('croatia')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.summer.croatia}<br><br>`;
+async function generateAIResponse(userMessage) {
+    try {
+        // Prepare conversation history (last 10 messages for context)
+        const conversationHistory = messageHistory
+            .slice(-10)
+            .map(msg => ({
+                role: msg.type === 'user' ? 'user' : 'assistant',
+                content: msg.message
+            }));
+
+        // Call backend API
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: userMessage,
+                history: conversationHistory
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.response) {
+            return data.response;
         } else {
-            response += "📍 <strong>Grčka</strong> - Tasos, Halkidiki, Krit, Rodos<br>";
-            response += "📍 <strong>Turska</strong> - Antalija, Belek, Side, Alanja<br>";
-            response += "📍 <strong>Egipat</strong> - Hurghada, Sharm El Sheikh<br>";
-            response += "📍 <strong>Hrvatska</strong> - Dalmacija, Istra, Kvarner<br>";
-            response += "📍 <strong>Crna Gora</strong> - Budva, Bečići<br>";
-            response += "📍 <strong>Tunis, Albanija, Bugarska</strong><br><br>";
+            // Use fallback response if API returns error
+            return data.fallbackResponse || getFallbackResponse();
         }
-        
-        response += "Za detaljnije informacije i rezervacije, kontaktirajte nas!";
-        return response;
+
+    } catch (error) {
+        console.error('API Error:', error);
+        return getFallbackResponse();
     }
-    
-    // Winter destinations
-    if (lowerMessage.includes('zimovanje') || lowerMessage.includes('zima') || lowerMessage.includes('ski') || lowerMessage.includes('skijanje')) {
-        let response = "⛷️ <strong>Zimovanje 2026</strong><br><br>Najbolje ski destinacije:<br><br>";
-        
-        if (lowerMessage.includes('kopaonik') || lowerMessage.includes('srbija') || lowerMessage.includes('serbia')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.winter.serbia}<br><br>`;
-        } else if (lowerMessage.includes('austrija') || lowerMessage.includes('austria')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.winter.austria}<br><br>`;
-        } else if (lowerMessage.includes('italija') || lowerMessage.includes('italy')) {
-            response += `📍 ${OLYMPIC_KNOWLEDGE.destinations.winter.italy}<br><br>`;
-        } else {
-            response += "📍 <strong>Srbija</strong> - Kopaonik, Zlatibor, Stara Planina<br>";
-            response += "📍 <strong>Bugarska</strong> - Bansko, Borovets<br>";
-            response += "📍 <strong>Austrija</strong> - Innsbruck, Sölden<br>";
-            response += "📍 <strong>Italija</strong> - Dolomiti<br>";
-            response += "📍 <strong>Francuska</strong> - Chamonix, Val d'Isère<br>";
-            response += "📍 <strong>Slovenija, BiH</strong><br><br>";
-        }
-        
-        response += "Kontaktirajte nas za najbolje ponude!";
-        return response;
-    }
-    
-    // Contact information
-    if (lowerMessage.includes('kontakt') || lowerMessage.includes('telefon') || lowerMessage.includes('adresa') || lowerMessage.includes('email') || lowerMessage.includes('gde ste')) {
-        return `📞 <strong>Kontakt informacije</strong><br><br>` +
-               `<strong>Beograd:</strong><br>` +
-               `📍 ${OLYMPIC_KNOWLEDGE.contact.belgrade.address}<br>` +
-               `☎️ ${OLYMPIC_KNOWLEDGE.contact.belgrade.phones.join(', ')}<br><br>` +
-               `<strong>Kragujevac:</strong><br>` +
-               `📍 ${OLYMPIC_KNOWLEDGE.contact.kragujevac.address}<br>` +
-               `☎️ ${OLYMPIC_KNOWLEDGE.contact.kragujevac.phones[0]}<br><br>` +
-               `📧 ${OLYMPIC_KNOWLEDGE.contact.belgrade.email}`;
-    }
-    
-    // Avio karte
-    if (lowerMessage.includes('avio') || lowerMessage.includes('avion') || lowerMessage.includes('let') || lowerMessage.includes('karta')) {
-        return "✈️ <strong>Avio karte</strong><br><br>Nudimo povoljne avio karte za sve destinacije širom sveta! Kontaktirajte nas za najbolje ponude i cene.<br><br>📞 Pozovite nas ili pošaljite email za više informacija.";
-    }
-    
-    // Wellness & Spa
-    if (lowerMessage.includes('wellness') || lowerMessage.includes('spa') || lowerMessage.includes('relax')) {
-        return "🧖 <strong>Wellness & Spa</strong><br><br>Opustite se u našim spa centrima! Nudimo pakete za wellness vikende i duže boravke sa tretmanima, masažama i opuštajućim sadržajima.<br><br>Kontaktirajte nas za detaljne ponude!";
-    }
-    
-    // Prices
-    if (lowerMessage.includes('cena') || lowerMessage.includes('cene') || lowerMessage.includes('koliko kosta') || lowerMessage.includes('price')) {
-        return "💰 <strong>Cene</strong><br><br>Cene zavise od destinacije, perioda, tipa smeštaja i broja osoba. Za najtačnije informacije i najbolje ponude, molimo vas da nas kontaktirate:<br><br>📞 Beograd: +381 11 655 0 020<br>📞 Kragujevac: +381 34 617 6 020<br>📧 info@olympic.rs";
-    }
-    
-    // Thank you
-    if (lowerMessage.match(/\b(hvala|thanks|thank you|thx)\b/)) {
-        return "Nema na čemu! 😊 Ako imate još pitanja, slobodno pitajte. Tu smo da vam pomognemo!";
-    }
-    
-    // Goodbye
-    if (lowerMessage.match(/\b(doviđenja|cao|zbogom|bye|goodbye)\b/)) {
-        return "Doviđenja! 👋 Hvala što ste kontaktirali Olympic Travel. Radujemo se vašoj poseti!";
-    }
-    
-    // Default response
-    return "Hvala na poruci! 😊<br><br>Mogu vam pomoći sa informacijama o:<br>" +
-           "🏖️ Letovanju 2026<br>" +
-           "⛷️ Zimovanju 2026<br>" +
-           "✈️ Avio kartama<br>" +
-           "🧖 Wellness & Spa<br>" +
-           "📞 Kontakt informacijama<br><br>" +
-           "Šta vas interesuje?";
+}
+
+/**
+ * Get fallback response when API is unavailable
+ * @returns {string} - Fallback response
+ */
+function getFallbackResponse() {
+    return `Hvala na poruci! [icon-sun]\n\n` +
+        `Trenutno imam tehničkih poteškoća, ali možete nas kontaktirati direktno:\n\n` +
+        `[icon-phone] **Beograd:** +381 11 655 0 020\n` +
+        `[icon-phone] **Kragujevac:** +381 34 617 6 020\n` +
+        `[icon-email] info@olympic.rs\n\n` +
+        `Naš tim će vam rado pomoći!`;
+}
+
+/**
+ * Replace icon markers with SVG icons
+ * @param {string} text - Text with icon markers
+ * @returns {string} - Text with SVG icons
+ */
+function replaceIconsWithSVG(text) {
+    const icons = {
+        'icon-beach': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H22v-2h-4.5a1 1 0 0 1 0-2h5a1 1 0 0 0 1-1 12 12 0 0 0-12-12 12 12 0 0 0-12 12 1 1 0 0 0 1 1h5a1 1 0 0 1 0 2H2v2h4.5"/><path d="M12 2v20"/></svg>`,
+        'icon-ski': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="2"/><path d="m15 2 6 6-6 6"/><path d="M9 21 3 9l6-6 12 12-6 6z"/></svg>`,
+        'icon-plane': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`,
+        'icon-hotel': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M6 4v17"/><path d="M18 4v17"/><path d="M6 4h12"/></svg>`,
+        'icon-sun': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
+        'icon-mountain': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>`,
+        'icon-phone': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+        'icon-email': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
+        'icon-location': `<svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`
+    };
+
+    let result = text;
+
+    // Replace icon markers with SVG
+    Object.keys(icons).forEach(iconKey => {
+        const regex = new RegExp(`\\[${iconKey}\\]`, 'g');
+        result = result.replace(regex, icons[iconKey]);
+    });
+
+    return result;
+}
+
+/**
+ * Format text with proper line breaks and styling
+ * @param {string} text - Text to format
+ * @returns {string} - Formatted HTML
+ */
+function formatMessageText(text) {
+    // Handle literal \n strings if sent by AI
+    let formatted = text.replace(/\\n/g, '\n');
+
+    // Replace double newlines with paragraph breaks
+    formatted = formatted.replace(/\n\n/g, '</p><p>');
+
+    // Replace single newlines with <br>
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    // Wrap in paragraph tags
+    formatted = `<p>${formatted}</p>`;
+
+    // Bold text between **
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Replace icons
+    formatted = replaceIconsWithSVG(formatted);
+
+    return formatted;
 }
 
 // ===================================
@@ -346,10 +307,10 @@ function generateAIResponse(userMessage) {
 function addMessage(message, type = 'bot') {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}-message`;
-    
+
     const avatarDiv = document.createElement('div');
     avatarDiv.className = 'message-avatar';
-    
+
     if (type === 'bot') {
         avatarDiv.innerHTML = `
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -372,17 +333,23 @@ function addMessage(message, type = 'bot') {
             </svg>
         `;
     }
-    
+
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
-    contentDiv.innerHTML = message;
-    
+
+    // Format bot messages with proper spacing and icons
+    if (type === 'bot') {
+        contentDiv.innerHTML = formatMessageText(message);
+    } else {
+        contentDiv.innerHTML = message;
+    }
+
     messageDiv.appendChild(avatarDiv);
     messageDiv.appendChild(contentDiv);
-    
+
     chatbotMessages.appendChild(messageDiv);
     scrollToBottom();
-    
+
     // Store in history (without HTML tags for security)
     messageHistory.push({
         type,
@@ -422,45 +389,42 @@ async function handleSendMessage() {
     // Check session timeout
     checkSessionTimeout();
     if (!sessionActive) return;
-    
+
     const userMessage = chatbotInput.value.trim();
-    
+
     // Validate input
     if (!userMessage) return;
-    
+
     // Check rate limiting
     if (isRateLimited()) {
         showRateLimitWarning();
         return;
     }
-    
+
     // Sanitize input
     const sanitizedMessage = sanitizeInput(userMessage);
-    
+
     // Check for prompt injection
     if (detectPromptInjection(sanitizedMessage)) {
         showErrorMessage('Detektovan je pokušaj nebezbednog unosa. Molimo unesite validnu poruku.');
         chatbotInput.value = '';
         return;
     }
-    
+
     // Add user message
     addMessage(sanitizedMessage, 'user');
     addMessageTimestamp();
     updateActivity();
-    
+
     // Clear input
     chatbotInput.value = '';
     charCount.textContent = '0';
-    
+
     // Show typing indicator
     showTypingIndicator();
-    
-    // Simulate AI thinking time
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
-    
-    // Generate and show response
-    const response = generateAIResponse(sanitizedMessage);
+
+    // Generate and show response (call real AI API)
+    const response = await generateAIResponse(sanitizedMessage);
     hideTypingIndicator();
     addMessage(response, 'bot');
     updateActivity();
@@ -472,21 +436,21 @@ async function handleSendMessage() {
 
 chatbotHeader.addEventListener('mousedown', (e) => {
     if (e.target.closest('.control-btn')) return;
-    
+
     isDragging = true;
     const rect = chatbotContainer.getBoundingClientRect();
     dragOffset.x = e.clientX - rect.left;
     dragOffset.y = e.clientY - rect.top;
-    
+
     chatbotContainer.style.transition = 'none';
 });
 
 document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    
+
     const x = e.clientX - dragOffset.x;
     const y = e.clientY - dragOffset.y;
-    
+
     chatbotContainer.style.left = `${x}px`;
     chatbotContainer.style.top = `${y}px`;
     chatbotContainer.style.right = 'auto';
@@ -507,25 +471,25 @@ document.addEventListener('mouseup', () => {
 resizeHandle.addEventListener('mousedown', (e) => {
     e.stopPropagation();
     isResizing = true;
-    
+
     const rect = chatbotContainer.getBoundingClientRect();
     resizeStart.width = rect.width;
     resizeStart.height = rect.height;
     resizeStart.x = e.clientX;
     resizeStart.y = e.clientY;
-    
+
     chatbotContainer.style.transition = 'none';
 });
 
 document.addEventListener('mousemove', (e) => {
     if (!isResizing) return;
-    
+
     const deltaX = e.clientX - resizeStart.x;
     const deltaY = e.clientY - resizeStart.y;
-    
+
     const newWidth = Math.max(300, Math.min(600, resizeStart.width + deltaX));
     const newHeight = Math.max(400, Math.min(800, resizeStart.height + deltaY));
-    
+
     chatbotContainer.style.width = `${newWidth}px`;
     chatbotContainer.style.height = `${newHeight}px`;
 });
@@ -567,13 +531,13 @@ chatbotInput.addEventListener('keypress', (e) => {
 chatbotInput.addEventListener('input', (e) => {
     const length = e.target.value.length;
     charCount.textContent = length;
-    
+
     if (length >= SECURITY_CONFIG.MAX_MESSAGE_LENGTH) {
         charCount.style.color = '#ef4444';
     } else {
         charCount.style.color = '';
     }
-    
+
     updateActivity();
 });
 

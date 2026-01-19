@@ -283,9 +283,9 @@ body {
 }
 
 .message-content p {
-    margin: 0 0 8px 0;
+    margin: 0 0 12px 0;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
     color: var(--olympic-dark);
 }
 
@@ -295,6 +295,26 @@ body {
 
 .message-content p:last-child {
     margin-bottom: 0;
+}
+
+/* Inline Icons */
+.message-content .inline-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    color: var(--olympic-teal);
+    stroke-width: 2.5;
+}
+
+.message-content strong {
+    font-weight: 600;
+    color: var(--olympic-dark);
+}
+
+.user-message .message-content strong {
+    color: var(--olympic-white);
 }
 
 .message-content ul {
