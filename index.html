@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:;">
+    <title>Olympic Travel Chat Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Chatbot Toggle Button -->
+    <button id="chatbot-toggle" class="chatbot-toggle" aria-label="Otvori chat">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H6L4 18V4H20V16Z" fill="white"/>
+            <path d="M7 9H17V11H7V9ZM7 12H14V14H7V12Z" fill="white"/>
+        </svg>
+    </button>
+
+    <!-- Chatbot Container -->
+    <div id="chatbot-container" class="chatbot-container hidden">
+        <!-- Chatbot Header -->
+        <div class="chatbot-header" id="chatbot-header">
+            <div class="chatbot-header-content">
+                <div class="chatbot-logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="16" fill="url(#gradient)"/>
+                        <path d="M16 8L20 12H18V20H14V12H12L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#1F768E"/>
+                                <stop offset="100%" stop-color="#981275"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="chatbot-title">
+                    <h3>Olympic Travel</h3>
+                    <p class="chatbot-status">
+                        <span class="status-indicator"></span>
+                        Online
+                    </p>
+                </div>
+            </div>
+            <div class="chatbot-controls">
+                <button id="minimize-btn" class="control-btn" aria-label="Minimiziraj">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 8H14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <button id="close-btn" class="control-btn" aria-label="Zatvori">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 2L14 14M14 2L2 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chatbot Messages -->
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="message bot-message">
+                <div class="message-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="12" fill="url(#avatarGradient)"/>
+                        <path d="M12 6L15 9H13V15H11V9H9L12 6Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="avatarGradient" x1="0" y1="0" x2="24" y2="24">
+                                <stop offset="0%" stop-color="#1F768E"/>
+                                <stop offset="100%" stop-color="#981275"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <p>Dobrodošli u Olympic Travel! 👋</p>
+                    <p>Ja sam vaš virtuelni asistent. Mogu vam pomoći sa informacijama o:</p>
+                    <ul>
+                        <li>🏖️ Letovanje 2026 (Grčka, Turska, Egipat, Tunis...)</li>
+                        <li>⛷️ Zimovanje 2026 (Srbija, Bugarska, Austrija, Italija...)</li>
+                        <li>✈️ Avio karte</li>
+                        <li>🏨 Wellness & Spa ponude</li>
+                        <li>📞 Kontakt informacije</li>
+                    </ul>
+                    <p>Kako vam mogu pomoći danas?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator hidden" id="typing-indicator">
+            <div class="message-avatar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="12" fill="url(#typingGradient)"/>
+                    <path d="M12 6L15 9H13V15H11V9H9L12 6Z" fill="white"/>
+                    <defs>
+                        <linearGradient id="typingGradient" x1="0" y1="0" x2="24" y2="24">
+                            <stop offset="0%" stop-color="#1F768E"/>
+                            <stop offset="100%" stop-color="#981275"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <!-- Chatbot Input -->
+        <div class="chatbot-input-container">
+            <div class="chatbot-input-wrapper">
+                <input 
+                    type="text" 
+                    id="chatbot-input" 
+                    class="chatbot-input" 
+                    placeholder="Unesite vašu poruku..."
+                    maxlength="500"
+                    autocomplete="off"
+                >
+                <button id="send-btn" class="send-btn" aria-label="Pošalji poruku">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 10L18 2L10 18L8 11L2 10Z" fill="white"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="input-footer">
+                <span class="char-counter"><span id="char-count">0</span>/500</span>
+                <span class="security-badge" title="Zaštićeno enkripcijom">🔒 Sigurno</span>
+            </div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="resize-handle" id="resize-handle">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 14L10 10M14 10L10 14" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
